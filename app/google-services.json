@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "390055718498",
+    "project_id": "shareticket-48e49",
+    "storage_bucket": "shareticket-48e49.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:390055718498:android:ebc2452423232ec9f16b3b",
+        "android_client_info": {
+          "package_name": "com.shareticket.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6Fvvv2yBry0J0piQbee7xm1Emq5wxxsY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
