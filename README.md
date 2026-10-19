@@ -14,7 +14,6 @@ App Android para gestionar tus tickets, hecha con **Kotlin** y **Jetpack Compose
 
 - Kotlin
 - Jetpack Compose
-- Navigation Compose
 - Firebase Authentication (Google)
 - Cloud Firestore
 - Arquitectura MVVM (Screen, ViewModel, UiState)
