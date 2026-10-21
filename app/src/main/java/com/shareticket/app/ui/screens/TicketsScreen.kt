@@ -42,8 +42,7 @@ import com.shareticket.app.ui.theme.ShareTicketTheme
 
 @Composable
 fun TicketsScreen(
-    ticket: TicketItem,
-    onDelete: () -> Unit,
+    onTicketClick: (String) -> Unit,
     onLogout: () -> Unit
 ) {
 
@@ -58,7 +57,8 @@ fun TicketsScreen(
 
 
     Column(
-        modifier = Modifier.fillMaxHeight()
+        modifier = Modifier
+            .fillMaxHeight()
             .padding(8.dp)
     ) {
         Text(
@@ -66,15 +66,23 @@ fun TicketsScreen(
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
         )
-        LazyColumn(
-            content = {
-                itemsIndexed(tickets){ index: Int, ticket: TicketItem ->
-                    TicketItem(ticket = ticket)
+        tickets?.let {
+            LazyColumn(
+                content = {
+                    itemsIndexed(tickets){ index: Int, ticket: TicketItem ->
+                        TicketItem(ticket = ticket)
+                    }
                 }
-            }
+            )
+        }?: Text(
+            text = "No hay tickets",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
         )
+
         Row(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .padding(8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
@@ -115,7 +123,7 @@ fun TicketItem(ticket : TicketItem){
                 color = Color.LightGray
             )
         }
-        IconButton(onClick = { }) {
+        IconButton(onClick = { deleteTicket(ticket.id.toInt()) }) {
             Image(
                 painter = painterResource(id = android.R.drawable.ic_delete),
                 contentDescription = "Delete Ticket"
@@ -123,11 +131,16 @@ fun TicketItem(ticket : TicketItem){
         }
         IconButton(onClick = { }) {
             Image(
-                painter = painterResource(id = android.R.drawable.ic_secure),
+                painter = painterResource(id = android.R.drawable.ic_menu_edit),
                 contentDescription = "Modify Ticket"
             )
         }
     }
+}
+
+fun deleteTicket(id: Int){
+    val ticketList = mutableListOf<TicketItem>()
+    ticketList.removeIf { it.id.toInt() == id }
 }
 
 @Preview(showBackground = true)
@@ -135,8 +148,7 @@ fun TicketItem(ticket : TicketItem){
 fun TicketsScreenPreview() {
     ShareTicketTheme {
         TicketsScreen(
-            ticket = TicketItem(id = "1", name = "Ticket 1", isCompleted = false, addedBy = "User 1"),
-            onDelete = {},
+            onTicketClick = {},
             onLogout = {}
         )
     }

@@ -9,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import com.shareticket.app.ui.theme.ShareTicketTheme
 
 @Composable
 fun TicketDetailScreen(
@@ -30,5 +32,16 @@ fun TicketDetailScreen(
                 color = MaterialTheme.colorScheme.primary
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TicketDetailScreenPreview() {
+    ShareTicketTheme {
+        TicketDetailScreen(
+            ticketId = "1",
+            onBack = {}
+        )
     }
 }
