@@ -17,13 +17,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.shareticket.app.data.model.Ticket
 import com.shareticket.app.data.model.TicketItem
 import com.shareticket.app.ui.theme.ShareTicketTheme
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
 fun TicketsScreen(
@@ -47,11 +51,13 @@ fun TicketsScreen(
 ) {
 
     // Para probar que funciona bien, esto luego se reemplazara por los datos en el Firebase
-    val tickets = listOf<TicketItem>(
-        TicketItem(id = "1", name = "Ticket 1", isCompleted = false, addedBy = "User 1"),
-        TicketItem(id = "2", name = "Ticket 2", isCompleted = true, addedBy = "User 2"),
-        TicketItem(id = "3", name = "Ticket 3", isCompleted = false, addedBy = "User 3")
-    )
+    val tickets = remember {
+        mutableStateListOf<TicketItem>(
+            TicketItem("1", "Ticket 1", true, "User 1"),
+            TicketItem("2", "Ticket 2", true, "User 2"),
+            TicketItem("3", "Ticket 3", false,"User 3")
+        )
+    }
 
     var inputText by remember { mutableStateOf("") }
 
@@ -70,7 +76,12 @@ fun TicketsScreen(
             LazyColumn(
                 content = {
                     itemsIndexed(tickets){ index: Int, ticket: TicketItem ->
-                        TicketItem(ticket = ticket)
+                        TicketItem(
+                            ticket = ticket,
+                            onCheckedChange = { checked ->
+                                tickets[index] = ticket.copy(isCompleted = checked)
+                            }
+                        )
                     }
                 }
             )
@@ -98,7 +109,7 @@ fun TicketsScreen(
 }
 
 @Composable
-fun TicketItem(ticket : TicketItem){
+fun TicketItem(ticket : TicketItem, onCheckedChange: (Boolean) -> Unit){
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -109,7 +120,7 @@ fun TicketItem(ticket : TicketItem){
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         ) {
             Text(
                 text = ticket.name,
@@ -135,12 +146,17 @@ fun TicketItem(ticket : TicketItem){
                 contentDescription = "Modify Ticket"
             )
         }
+        Checkbox(
+            checked = ticket.isCompleted,
+            onCheckedChange = { checked ->
+                onCheckedChange(checked)
+            }
+        )
     }
 }
 
 fun deleteTicket(id: Int){
-    val ticketList = mutableListOf<TicketItem>()
-    ticketList.removeIf { it.id.toInt() == id }
+    //TODO: Delete ticket from Firebase
 }
 
 @Preview(showBackground = true)
