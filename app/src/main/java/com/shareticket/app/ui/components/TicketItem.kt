@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,7 +29,7 @@ import com.shareticket.app.data.model.TicketItem
 fun TicketItemRow(
     item: TicketItem,
     onCheckedChange: (Boolean) -> Unit,
-    onDelete: (Int) -> Unit
+    onDelete: (String) -> Unit
 ) {
 
     Row(
@@ -67,10 +68,11 @@ fun TicketItemRow(
                 onCheckedChange(checked)
             }
         )
-        IconButton(onClick = { onDelete(item.id.toInt()) }) {
-            Image(
+        IconButton(onClick = { onDelete(item.id) }) {
+            Icon(
                 painter = painterResource(id = android.R.drawable.ic_delete),
-                contentDescription = "Delete Ticket"
+                contentDescription = "Delete Ticket",
+                tint = Color.White
             )
         }
     }

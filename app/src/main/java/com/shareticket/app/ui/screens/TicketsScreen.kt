@@ -36,9 +36,9 @@ fun TicketsScreen(
     // Para probar que funciona bien, esto luego se reemplazara por los datos en el Firebase
     val tickets = remember {
         mutableStateListOf<TicketItem>(
-            TicketItem("1", "Ticket 1", true, "User 1"),
-            TicketItem("2", "Ticket 2", true, "User 2"),
-            TicketItem("3", "Ticket 3", false,"User 3")
+            TicketItem("0", "Ticket 1", true, "User 1"),
+            TicketItem("1", "Ticket 2", true, "User 2"),
+            TicketItem("2", "Ticket 3", false,"User 3")
         )
     }
 
@@ -55,22 +55,27 @@ fun TicketsScreen(
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
         )
-        tickets?.let {
+
+
+        if(tickets.isEmpty()){
+            Text(
+                text = "No hay tickets",
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }else{
             LazyColumn(
                 content = {
                     itemsIndexed(tickets){ index: Int, item: TicketItem ->
                         TicketItemRow(
                             item = item,
                             onCheckedChange = { checked -> tickets[index] = item.copy(isCompleted = checked) },
-                            onDelete = { onDelete -> tickets[index] = tickets.removeAt(onDelete) })
+                            onDelete = { itemN -> tickets.removeIf { it.id == itemN }}
+                        )
                     }
                 }
             )
-        }?: Text(
-            text = "No hay tickets",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-        )
+        }
+
 
         Row(
             modifier = Modifier
@@ -82,7 +87,7 @@ fun TicketsScreen(
             OutlinedTextField(value = inputText, onValueChange = {
                 inputText = it
             })
-            Button(onClick = { /*TODO*/ }) {
+            Button(onClick = { tickets.add(TicketItem(id = tickets.size.toString(), name = inputText, isCompleted = false, addedBy = "User 1")) }) {
                 Text(text = "Add")
             }
         }
