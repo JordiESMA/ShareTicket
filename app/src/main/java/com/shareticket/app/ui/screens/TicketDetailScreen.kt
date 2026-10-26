@@ -6,11 +6,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import com.shareticket.app.data.model.Ticket
 import com.shareticket.app.data.model.TicketItem
+import com.shareticket.app.data.model.getFakeTickets
 import com.shareticket.app.ui.theme.ShareTicketTheme
 
 @Composable
@@ -18,6 +25,13 @@ fun TicketDetailScreen(
     ticketId: String,
     onBack: () -> Unit
 ) {
+
+    val tickets = remember {
+        mutableStateListOf<Ticket>().apply {
+            addAll(getFakeTickets())
+        }
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -27,7 +41,7 @@ fun TicketDetailScreen(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = ticketId,
+                text = tickets[ticketId.toInt()].title,
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary

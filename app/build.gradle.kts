@@ -48,6 +48,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
     implementation(platform("com.google.firebase:firebase-bom:33.10.0"))
     implementation(libs.firebase.analytics)
     implementation("com.google.firebase:firebase-auth")
