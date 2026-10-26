@@ -48,7 +48,6 @@ fun TicketsScreen(
 
     var inputText by remember { mutableStateOf("") }
 
-
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -76,8 +75,7 @@ fun TicketsScreen(
                                 onCheckedChange = { checked -> tickets[index] = item.copy(isCompleted = checked) },
                                 onDelete = { itemN -> tickets.removeIf { it.id == itemN }},
                                 onEdit = {
-                                    itemNou = tickets[index]
-                                    inputText = itemNou.name
+                                    item -> tickets[index].id = item.id
                                     editantTicket = true
                                 }
                             )
@@ -101,7 +99,7 @@ fun TicketsScreen(
                 }
             }
         }else{
-            TicketDetailScreen(itemNou.name) {
+            TicketDetailScreen(itemNou.id) {
 
             }
         }
@@ -114,7 +112,6 @@ fun TicketsScreen(
 
 
 }
-
 
 @Preview(showBackground = true)
 @Composable

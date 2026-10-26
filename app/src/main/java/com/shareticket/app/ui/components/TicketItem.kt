@@ -31,8 +31,10 @@ fun TicketItemRow(
     item: TicketItem,
     onCheckedChange: (Boolean) -> Unit,
     onDelete: (String) -> Unit,
-    onEdit: (String) -> Unit
+    onEdit: (TicketItem) -> Unit
 ) {
+
+
 
     Row(
         modifier = Modifier
@@ -58,7 +60,7 @@ fun TicketItemRow(
                 color = Color.LightGray
             )
         }
-        IconButton(onClick = { onEdit(item.id) }) {
+        IconButton(onClick = { onEdit(item) }) {
             Icon(
                 painter = painterResource(id = android.R.drawable.ic_menu_edit),
                 contentDescription = "Modify Ticket",
