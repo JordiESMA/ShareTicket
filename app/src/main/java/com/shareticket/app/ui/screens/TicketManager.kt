@@ -1,10 +1,11 @@
 package com.shareticket.app.ui.screens
 
+import androidx.compose.runtime.mutableStateListOf
 import com.shareticket.app.data.model.Ticket
 
 object TicketManager {
 
-    private val tickets = mutableListOf<Ticket>()
+    private val tickets = mutableStateListOf<Ticket>()
 
     fun getAllTickets(): List<Ticket> {
         return tickets
@@ -19,6 +20,10 @@ object TicketManager {
         tickets.removeIf {
             it.id == id
         }
+    }
+
+    fun editTicket(item: Ticket) {
+
     }
 
 }

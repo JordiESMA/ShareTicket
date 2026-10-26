@@ -53,12 +53,16 @@ fun TicketsScreen(
 
     var inputText by remember { mutableStateOf("") }
 
+    var itemIdNou by remember { mutableStateOf("") }
+
+    var editantTicket: Boolean by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxHeight()
             .padding(8.dp)
     ) {
-        // if (tickets != null) {
+        if (!editantTicket) {
             Text(
                 text = "Els meus Tickets",
                 fontSize = 24.sp,
@@ -68,7 +72,7 @@ fun TicketsScreen(
                 LazyColumn(
                     content = {
                         itemsIndexed(it) { index: Int, item: Ticket ->
-                            /** Row(
+                            /**Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(8.dp)
@@ -103,17 +107,21 @@ fun TicketsScreen(
                                         tint = Color.White
                                     )
                                 }
-                                IconButton(onClick = { item.onDelete(item.id) }) {
+                                IconButton(onClick = { viewModel.deleteTicket(item.id) }) {
                                     Icon(
                                         painter = painterResource(id = android.R.drawable.ic_delete),
                                         contentDescription = "Delete Ticket",
                                         tint = Color.White
                                     )
                                 }
-                            } **/
+                            }**/
                             TicketRow(
                                 item = item,
-                                onDelete = { viewModel.deleteTicket(item.id) }
+                                onDelete = { viewModel.deleteTicket(item.id) },
+                                onEdit = {
+                                    editantTicket = true
+                                    itemIdNou = item.id
+                                }
                             )
                         }
                     }
@@ -140,18 +148,16 @@ fun TicketsScreen(
                     Text(text = "Add")
                 }
             }
-
+        }else{
+            TicketDetailScreen(itemIdNou, onBack = { editantTicket = false })
+        }
 
 
     }
 }
 
 @Composable
-fun TicketRow(item: Ticket, onDelete: () -> Unit){
-
-    var itemIdNou by remember { mutableStateOf("") }
-
-    var editantTicket: Boolean by remember { mutableStateOf(false) }
+fun TicketRow(item: Ticket, onDelete: () -> Unit, onEdit: (String) -> Unit){
 
     Row(
         modifier = Modifier
@@ -177,10 +183,7 @@ fun TicketRow(item: Ticket, onDelete: () -> Unit){
                 color = Color.LightGray
             )
         }
-        IconButton(onClick = {
-            itemIdNou = item.id
-            editantTicket = true
-        }) {
+        IconButton(onClick = { onEdit(item.id) }) {
             Icon(
                 painter = painterResource(id = android.R.drawable.ic_menu_edit),
                 contentDescription = "Modify Ticket",
@@ -188,7 +191,7 @@ fun TicketRow(item: Ticket, onDelete: () -> Unit){
                 tint = Color.White
             )
         }
-        IconButton(onClick = { onDelete }) {
+        IconButton(onClick = onDelete) {
             Icon(
                 painter = painterResource(id = android.R.drawable.ic_delete),
                 contentDescription = "Delete Ticket",

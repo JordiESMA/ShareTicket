@@ -7,6 +7,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -15,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shareticket.app.data.model.Ticket
 import com.shareticket.app.data.model.TicketItem
 import com.shareticket.app.data.model.getFakeTickets
@@ -23,14 +25,11 @@ import com.shareticket.app.ui.theme.ShareTicketTheme
 @Composable
 fun TicketDetailScreen(
     ticketId: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: TicketViewModel = viewModel()
 ) {
 
-    val tickets = remember {
-        mutableStateListOf<Ticket>().apply {
-            addAll(getFakeTickets())
-        }
-    }
+    val tickets by viewModel.tickets.observeAsState()
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -41,7 +40,7 @@ fun TicketDetailScreen(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = tickets[ticketId.toInt()].title,
+                text = tickets?.get(ticketId.toInt())?.title ?: "Ticket not found",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
