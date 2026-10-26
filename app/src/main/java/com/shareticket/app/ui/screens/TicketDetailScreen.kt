@@ -26,7 +26,7 @@ fun TicketDetailScreen(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "TICKETDETAIL",
+                text = ticketId,
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary

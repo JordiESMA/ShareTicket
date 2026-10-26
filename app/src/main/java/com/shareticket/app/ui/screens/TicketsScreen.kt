@@ -33,6 +33,8 @@ fun TicketsScreen(
     onLogout: () -> Unit
 ) {
 
+    var editantTicket: Boolean by remember { mutableStateOf(false) }
+
     // Para probar que funciona bien, esto luego se reemplazara por los datos en el Firebase
     val tickets = remember {
         mutableStateListOf<TicketItem>(
@@ -42,6 +44,8 @@ fun TicketsScreen(
         )
     }
 
+    var itemNou: TicketItem = TicketItem()
+
     var inputText by remember { mutableStateOf("") }
 
 
@@ -50,47 +54,61 @@ fun TicketsScreen(
             .fillMaxHeight()
             .padding(8.dp)
     ) {
-        Text(
-            text = "Els meus Tickets",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-        )
-
-
-        if(tickets.isEmpty()){
+        if(!editantTicket){
             Text(
-                text = "No hay tickets",
-                modifier = Modifier.padding(top = 8.dp)
+                text = "Els meus Tickets",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
             )
-        }else{
-            LazyColumn(
-                content = {
-                    itemsIndexed(tickets){ index: Int, item: TicketItem ->
-                        TicketItemRow(
-                            item = item,
-                            onCheckedChange = { checked -> tickets[index] = item.copy(isCompleted = checked) },
-                            onDelete = { itemN -> tickets.removeIf { it.id == itemN }}
-                        )
+
+
+            if(tickets.isEmpty()){
+                Text(
+                    text = "No hay tickets",
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }else{
+                LazyColumn(
+                    content = {
+                        itemsIndexed(tickets){ index: Int, item: TicketItem ->
+                            TicketItemRow(
+                                item = item,
+                                onCheckedChange = { checked -> tickets[index] = item.copy(isCompleted = checked) },
+                                onDelete = { itemN -> tickets.removeIf { it.id == itemN }},
+                                onEdit = {
+                                    itemNou = tickets[index]
+                                    inputText = itemNou.name
+                                    editantTicket = true
+                                }
+                            )
+                        }
                     }
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(value = inputText, onValueChange = {
+                    inputText = it
+                })
+                Button(onClick = { tickets.add(TicketItem(id = tickets.size.toString(), name = inputText, isCompleted = false, addedBy = "User 1")) }) {
+                    Text(text = "Add")
                 }
-            )
-        }
+            }
+        }else{
+            TicketDetailScreen(itemNou.name) {
 
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(value = inputText, onValueChange = {
-                inputText = it
-            })
-            Button(onClick = { tickets.add(TicketItem(id = tickets.size.toString(), name = inputText, isCompleted = false, addedBy = "User 1")) }) {
-                Text(text = "Add")
             }
         }
+
+
+
+
     }
 
 

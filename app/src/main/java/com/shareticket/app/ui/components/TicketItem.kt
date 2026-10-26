@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -29,7 +30,8 @@ import com.shareticket.app.data.model.TicketItem
 fun TicketItemRow(
     item: TicketItem,
     onCheckedChange: (Boolean) -> Unit,
-    onDelete: (String) -> Unit
+    onDelete: (String) -> Unit,
+    onEdit: (String) -> Unit
 ) {
 
     Row(
@@ -56,10 +58,12 @@ fun TicketItemRow(
                 color = Color.LightGray
             )
         }
-        IconButton(onClick = { }) {
-            Image(
+        IconButton(onClick = { onEdit(item.id) }) {
+            Icon(
                 painter = painterResource(id = android.R.drawable.ic_menu_edit),
-                contentDescription = "Modify Ticket"
+                contentDescription = "Modify Ticket",
+                Modifier.size(20.dp),
+                tint = Color.White
             )
         }
         Checkbox(
