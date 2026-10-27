@@ -22,8 +22,4 @@ object TicketManager {
         }
     }
 
-    fun editTicket(item: Ticket) {
-
-    }
-
 }

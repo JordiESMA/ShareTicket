@@ -71,7 +71,7 @@ fun TicketsScreen(
             tickets?.let {
                 LazyColumn(
                     content = {
-                        itemsIndexed(it) { index: Int, item: Ticket ->
+                        itemsIndexed(it) { index : Int, item: Ticket ->
                             /**Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -119,9 +119,12 @@ fun TicketsScreen(
                                 item = item,
                                 onDelete = { viewModel.deleteTicket(item.id) },
                                 onEdit = {
-                                    editantTicket = true
-                                    itemIdNou = item.id
+                                    itemN -> itemIdNou = itemN
+                                    // editantTicket = true
                                 }
+                            )
+                            Text(
+                                text = itemIdNou
                             )
                         }
                     }
@@ -172,7 +175,7 @@ fun TicketRow(item: Ticket, onDelete: () -> Unit, onEdit: (String) -> Unit){
             modifier = Modifier.weight(1f),
         ) {
             Text(
-                text = item.title,
+                text = "${item.id} + ${item.title}",
                 fontSize = 20.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Bold
@@ -183,7 +186,7 @@ fun TicketRow(item: Ticket, onDelete: () -> Unit, onEdit: (String) -> Unit){
                 color = Color.LightGray
             )
         }
-        IconButton(onClick = { onEdit(item.id) }) {
+        IconButton(onClick = {onEdit(item.id)}) {
             Icon(
                 painter = painterResource(id = android.R.drawable.ic_menu_edit),
                 contentDescription = "Modify Ticket",
