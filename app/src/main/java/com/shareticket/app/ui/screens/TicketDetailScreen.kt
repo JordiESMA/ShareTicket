@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -37,6 +39,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shareticket.app.data.model.Ticket
 import com.shareticket.app.data.model.TicketItem
 import com.shareticket.app.data.model.getFakeTickets
+import com.shareticket.app.ui.components.TicketItemRow
 import com.shareticket.app.ui.theme.ShareTicketTheme
 
 @Composable
@@ -48,6 +51,33 @@ fun TicketDetailScreen(
 
     val tickets by viewModel.tickets.observeAsState()
 
+    val TestTicket = Ticket(
+        id = 1.toString(),
+        title = "Ticket 1",
+        createdBy = "User 1",
+        creatorEmail = "william.henry.harrison@example-pet-store.com",
+        items = listOf(
+            TicketItem(
+                id = "1",
+                name = "Item 1",
+                isCompleted = false,
+                addedBy = "User 1"
+            ),
+            TicketItem(
+                id = "2",
+                name = "Item 2",
+                isCompleted = true,
+                addedBy = "User 2"
+            ),
+            TicketItem(
+                id = "3",
+                name = "Item 3",
+                isCompleted = false,
+                addedBy = "User 3"
+            )
+        )
+    )
+
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -58,7 +88,6 @@ fun TicketDetailScreen(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            viewModel.getAllTickets()
             IconButton(onClick = onBack) {
                 Icon(
                     painter = painterResource(id = android.R.drawable.ic_menu_revert),
@@ -66,11 +95,25 @@ fun TicketDetailScreen(
                 )
             }
             Text(
-                text = tickets?.get(ticketId.toInt() - 1)?.title ?: "Ticket not found",
+                text = tickets?.get(ticketId.toInt())?.title ?: "Ticket not found",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .padding(start = 8.dp)
+            )
+        }
+        TestTicket.items.let {
+            LazyColumn(
+                content = {
+                    itemsIndexed(it) { index: Int, item: TicketItem ->
+                        TicketItemRow(
+                            item = item,
+                            onCheckedChange = { checked -> item.isCompleted = checked },
+                            onDelete = { itemId -> item.id = itemId },
+                            onEdit = { onBack() }
+                        )
+                    }
+                }
             )
         }
 

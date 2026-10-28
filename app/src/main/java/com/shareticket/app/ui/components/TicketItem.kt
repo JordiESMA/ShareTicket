@@ -29,6 +29,7 @@ import com.shareticket.app.data.model.TicketItem
 @Composable
 fun TicketItemRow(
     item: TicketItem,
+    onCheckedChange: (Boolean) -> Unit,
     onDelete: (String) -> Unit,
     onEdit: (String) -> Unit
 ) {
@@ -41,8 +42,17 @@ fun TicketItemRow(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Checkbox(
+            checked = item.isCompleted,
+            onCheckedChange = { checked ->
+                onCheckedChange(checked)
+            }
+        )
         Column(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 16.dp)
+
         ) {
             Text(
                 text = item.name,
@@ -56,18 +66,18 @@ fun TicketItemRow(
                 color = Color.LightGray
             )
         }
+        IconButton(onClick = { onDelete(item.id) }) {
+            Icon(
+                painter = painterResource(id = android.R.drawable.ic_delete),
+                contentDescription = "Delete Ticket",
+                tint = Color.White
+            )
+        }
         IconButton(onClick = { onEdit("1") }) {
             Icon(
                 painter = painterResource(id = android.R.drawable.ic_menu_edit),
                 contentDescription = "Modify Ticket",
                 Modifier.size(20.dp),
-                tint = Color.White
-            )
-        }
-        IconButton(onClick = { onDelete(item.id) }) {
-            Icon(
-                painter = painterResource(id = android.R.drawable.ic_delete),
-                contentDescription = "Delete Ticket",
                 tint = Color.White
             )
         }

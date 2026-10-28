@@ -36,9 +36,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.rememberNavController
 import com.shareticket.app.data.model.Ticket
 import com.shareticket.app.data.model.TicketItem
 import com.shareticket.app.data.model.getFakeTickets
+import com.shareticket.app.navigation.Screen
 import com.shareticket.app.ui.components.TicketItemRow
 import com.shareticket.app.ui.theme.ShareTicketTheme
 
@@ -53,10 +55,6 @@ fun TicketsScreen(
     val tickets by viewModel.tickets.observeAsState()
 
     var inputText by remember { mutableStateOf("") }
-
-    var itemIdNou by remember { mutableStateOf("") }
-
-    var editantTicket: Boolean by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -126,9 +124,6 @@ fun TicketsScreen(
                                 onDelete = { viewModel.deleteTicket(item.id) },
                                 onEdit = { onTicketClick(item.id) }
                             )
-                            Text(
-                                text = itemIdNou
-                            )
                         }
                     }
                 )
@@ -158,8 +153,7 @@ fun TicketsScreen(
 }
 
 @Composable
-fun TicketRow(item: Ticket, onDelete: () -> Unit, onEdit: (String) -> Unit) {
-
+fun TicketRow(item: Ticket, onDelete: () -> Unit, onEdit: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
