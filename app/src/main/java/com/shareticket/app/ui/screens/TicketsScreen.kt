@@ -1,5 +1,6 @@
 package com.shareticket.app.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -62,66 +63,68 @@ fun TicketsScreen(
             .fillMaxHeight()
             .padding(8.dp)
     ) {
-        if (!editantTicket) {
+        Text(
+            text = "Els meus Tickets",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        if(tickets?.isEmpty() ?: true){
             Text(
-                text = "Els meus Tickets",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
+                text = "No hi ha tickets",
+                modifier = Modifier.padding(top = 8.dp)
             )
+        }else {
             tickets?.let {
                 LazyColumn(
                     content = {
-                        itemsIndexed(it) { index : Int, item: Ticket ->
+                        itemsIndexed(it) { index: Int, item: Ticket ->
                             /**Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(MaterialTheme.colorScheme.primary)
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                            .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                ) {
-                                    Text(
-                                        text = item.title,
-                                        fontSize = 20.sp,
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = "Created by: ${item.createdBy}",
-                                        fontSize = 16.sp,
-                                        color = Color.LightGray
-                                    )
-                                }
-                                IconButton(onClick = {
-                                    itemIdNou = item.id
-                                    editantTicket = true
-                                }) {
-                                    Icon(
-                                        painter = painterResource(id = android.R.drawable.ic_menu_edit),
-                                        contentDescription = "Modify Ticket",
-                                        Modifier.size(20.dp),
-                                        tint = Color.White
-                                    )
-                                }
-                                IconButton(onClick = { viewModel.deleteTicket(item.id) }) {
-                                    Icon(
-                                        painter = painterResource(id = android.R.drawable.ic_delete),
-                                        contentDescription = "Delete Ticket",
-                                        tint = Color.White
-                                    )
-                                }
+                            Column(
+                            modifier = Modifier.weight(1f),
+                            ) {
+                            Text(
+                            text = item.title,
+                            fontSize = 20.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                            text = "Created by: ${item.createdBy}",
+                            fontSize = 16.sp,
+                            color = Color.LightGray
+                            )
+                            }
+                            IconButton(onClick = {
+                            itemIdNou = item.id
+                            editantTicket = true
+                            }) {
+                            Icon(
+                            painter = painterResource(id = android.R.drawable.ic_menu_edit),
+                            contentDescription = "Modify Ticket",
+                            Modifier.size(20.dp),
+                            tint = Color.White
+                            )
+                            }
+                            IconButton(onClick = { viewModel.deleteTicket(item.id) }) {
+                            Icon(
+                            painter = painterResource(id = android.R.drawable.ic_delete),
+                            contentDescription = "Delete Ticket",
+                            tint = Color.White
+                            )
+                            }
                             }**/
                             TicketRow(
                                 item = item,
                                 onDelete = { viewModel.deleteTicket(item.id) },
-                                onEdit = {
-                                    itemN -> itemIdNou = itemN
-                                    // editantTicket = true
-                                }
+                                onEdit = { onTicketClick(item.id) }
                             )
                             Text(
                                 text = itemIdNou
@@ -129,30 +132,25 @@ fun TicketsScreen(
                         }
                     }
                 )
-            }?: Text(
-                text = "No hi ha tickets",
-                modifier = Modifier.padding(top = 8.dp)
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(value = inputText, onValueChange = {
-                    inputText = it
-                })
-                Button(onClick = {
-                    viewModel.addTicket(inputText)
-                    inputText = ""
-                }) {
-                    Text(text = "Add")
-                }
             }
-        }else{
-            TicketDetailScreen(itemIdNou, onBack = { editantTicket = false })
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(value = inputText, onValueChange = {
+                inputText = it
+            })
+            Button(onClick = {
+                viewModel.addTicket(inputText)
+                inputText = ""
+            }) {
+                Text(text = "Add")
+            }
         }
 
 
@@ -160,7 +158,7 @@ fun TicketsScreen(
 }
 
 @Composable
-fun TicketRow(item: Ticket, onDelete: () -> Unit, onEdit: (String) -> Unit){
+fun TicketRow(item: Ticket, onDelete: () -> Unit, onEdit: (String) -> Unit) {
 
     Row(
         modifier = Modifier
@@ -186,18 +184,18 @@ fun TicketRow(item: Ticket, onDelete: () -> Unit, onEdit: (String) -> Unit){
                 color = Color.LightGray
             )
         }
-        IconButton(onClick = {onEdit(item.id)}) {
-            Icon(
-                painter = painterResource(id = android.R.drawable.ic_menu_edit),
-                contentDescription = "Modify Ticket",
-                Modifier.size(20.dp),
-                tint = Color.White
-            )
-        }
         IconButton(onClick = onDelete) {
             Icon(
                 painter = painterResource(id = android.R.drawable.ic_delete),
                 contentDescription = "Delete Ticket",
+                tint = Color.White
+            )
+        }
+        IconButton(onClick = { onEdit }) {
+            Icon(
+                painter = painterResource(id = android.R.drawable.ic_menu_edit),
+                contentDescription = "Modify Ticket",
+                Modifier.size(20.dp),
                 tint = Color.White
             )
         }
@@ -209,7 +207,7 @@ fun TicketRow(item: Ticket, onDelete: () -> Unit, onEdit: (String) -> Unit){
 fun TicketsScreenPreview() {
     ShareTicketTheme {
         TicketsScreen(
-            onTicketClick = {},
+            onTicketClick = { id -> Log.d("Nav", "Clicked ticket $id") },
             onLogout = {},
         )
     }
