@@ -43,15 +43,17 @@ fun TicketsScreen(
 
     val scope = rememberCoroutineScope()
 
-    var tickets: List<com.shareticket.app.data.repository.Ticket> = remember {
-        mutableStateListOf<com.shareticket.app.data.repository.Ticket>()
-    }
+    var tickets by remember { mutableStateOf<List<com.shareticket.app.data.repository.Ticket>>(emptyList()) }
 
-    scope.launch {
-        tickets = FirestoreRepository.obtenerTickets(AuthRepository.usuarioActual()?.email ?: "")
+    fun getTickets() {
+        scope.launch {
+            tickets = FirestoreRepository.obtenerTickets(AuthRepository.usuarioActual()?.email ?: "")
+        }
     }
 
     var inputText by remember { mutableStateOf("") }
+
+    getTickets()
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -105,10 +107,12 @@ fun TicketsScreen(
                     inputText = it
                 })
                 Button(onClick = {
+                    if (inputText.isBlank()) return@Button
                     scope.launch {
-                        FirestoreRepository.crearTicket(inputText)
-                        // tickets.add(Ticket(id = tickets.size.toString(), title = inputText, createdBy = AuthRepository.usuarioActual()?.email ?: ""))
-                        inputText = ""
+                        if (FirestoreRepository.crearTicket(inputText.trim())) {
+                            inputText = ""
+                            getTickets()
+                        }
                     }
                 }) {
                     Text(text = "+")
