@@ -128,7 +128,7 @@ fun TicketRow(ticket: Ticket) {
             modifier = Modifier.weight(1f),
         ) {
             Text(
-                text = "${ticket.id} + ${ticket.title}",
+                text = ticket.title,
                 fontSize = 20.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Bold
