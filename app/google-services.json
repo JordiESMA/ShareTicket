@@ -12,7 +12,20 @@
           "package_name": "com.shareticket.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "390055718498-paknagnrjo6qoaatjtupkdfu5jfg59r1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shareticket.app",
+            "certificate_hash": "a8607f19947ba1ad8f586ec0dd8bf33b6b652aa0"
+          }
+        },
+        {
+          "client_id": "390055718498-jcsvku7v6729hno54taav6icp9v5q0kf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA6Fvvv2yBry0J0piQbee7xm1Emq5wxxsY"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "390055718498-jcsvku7v6729hno54taav6icp9v5q0kf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
