@@ -1,31 +1,39 @@
 package com.shareticket.app.ui.screens
 
-import androidx.compose.foundation.layout.Box
+import android.widget.Toast
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
+import com.shareticket.app.data.repository.AuthRepository
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
-    Surface(
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    Column(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "LOGIN",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
+        Button(onClick = {
+            scope.launch {
+                if (AuthRepository.loginConGoogle(context)) {
+                    onLoginSuccess()
+                } else {
+                    Toast.makeText(context, "No se pudo iniciar sesión", Toast.LENGTH_LONG).show()
+                }
+            }
+        }) {
+            Text("Entrar con Google")
         }
     }
 }
