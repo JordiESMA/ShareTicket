@@ -4,13 +4,15 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
+import com.shareticket.app.data.model.TicketItem
 import kotlinx.coroutines.tasks.await
 
 data class Ticket(
     val id: String = "",
     val title: String = "",
     val createdBy: String = "",
-    val sharedWith: List<String> = emptyList()
+    val sharedWith: List<String> = emptyList(),
+    val items: List<TicketItem> = emptyList()
 )
 
 object FirestoreRepository {
