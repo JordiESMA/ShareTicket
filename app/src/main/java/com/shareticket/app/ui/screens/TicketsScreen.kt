@@ -89,7 +89,7 @@ fun TicketsScreen(
                             items(it.size) { index ->
                                 TicketRow(
                                     ticket = it[index],
-                                    onTicketClick = { onTicketClick(AuthRepository.usuarioActual()?.uid.toString() ) }
+                                    onTicketClick = { onTicketClick( it[index].id ) }
                                 )
                             }
                         }
@@ -130,7 +130,7 @@ fun TicketRow(ticket: com.shareticket.app.data.repository.Ticket, onTicketClick:
             .padding(8.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.primary),
-        onClick = { onTicketClick }
+        onClick = { onTicketClick() }
     ) {
         Column(
             modifier = Modifier.weight(1f),
