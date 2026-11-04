@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,6 +28,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import com.shareticket.app.data.model.TicketItem
 import com.shareticket.app.data.repository.AuthRepository
 import com.shareticket.app.data.repository.FirestoreRepository
+import com.shareticket.app.data.repository.Friend
 import com.shareticket.app.data.repository.Ticket
 import com.shareticket.app.ui.components.TicketItemRow
 import kotlinx.coroutines.launch
@@ -68,12 +71,13 @@ fun TicketDetailScreen(
 
     var ticket by remember { mutableStateOf<Ticket?>(null) }
     var ticketItems by remember { mutableStateOf<List<TicketItem>>(emptyList()) }
+    var friendsList by remember { mutableStateOf<List<Friend>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var inputText by remember { mutableStateOf("") }
 
     // Dialog states for sharing and shared-with list
     var showShareDialog by remember { mutableStateOf(false) }
-    var shareEmailInput by remember { mutableStateOf("") }
+    var shareInput by remember { mutableStateOf("") }
     var showSharedWithDialog by remember { mutableStateOf(false) }
 
     fun getTicketsAndItems() {
@@ -83,6 +87,7 @@ fun TicketDetailScreen(
                 .obtenerTickets(AuthRepository.usuarioActual()?.email ?: "")
                 .find { it.id == ticketId }
             ticketItems = FirestoreRepository.obtenerItems(ticketId)
+            friendsList = FirestoreRepository.obtenerAmigos()
             isLoading = false
         }
     }
@@ -119,7 +124,7 @@ fun TicketDetailScreen(
                         Icon(Icons.Default.Group, contentDescription = "Ver compartidos")
                     }
                     IconButton(onClick = {
-                        shareEmailInput = ""
+                        shareInput = ""
                         showShareDialog = true
                     }) {
                         Icon(Icons.Default.Share, contentDescription = "Compartir ticket")
@@ -247,15 +252,32 @@ fun TicketDetailScreen(
             text = {
                 Column {
                     Text(
-                        text = "Introduce el correo electrónico de la persona con la que deseas compartir este ticket:",
+                        text = "Introduce el correo o alias del amigo con quien deseas compartir este ticket:",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (friendsList.isNotEmpty()) {
+                        Text("Tus amigos (toca para seleccionar):", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            items(friendsList) { friend ->
+                                val label = if (friend.alias.isNotBlank()) friend.alias else friend.email
+                                FilterChip(
+                                    selected = shareInput == label || shareInput == friend.email,
+                                    onClick = { shareInput = label },
+                                    label = { Text(label) }
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
                     OutlinedTextField(
-                        value = shareEmailInput,
-                        onValueChange = { shareEmailInput = it },
-                        label = { Text("Correo electrónico") },
+                        value = shareInput,
+                        onValueChange = { shareInput = it },
+                        label = { Text("Correo o Alias del amigo") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -264,20 +286,20 @@ fun TicketDetailScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val email = shareEmailInput.trim()
-                        if (email.isNotBlank()) {
+                        val input = shareInput.trim()
+                        if (input.isNotBlank()) {
                             scope.launch {
-                                val success = FirestoreRepository.compartirTicket(ticketId, email)
+                                val success = FirestoreRepository.compartirTicket(ticketId, input)
                                 if (success) {
-                                    Toast.makeText(context, "Ticket compartido con éxito con $email", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "Ticket compartido con éxito", Toast.LENGTH_LONG).show()
                                     getTicketsAndItems()
                                 } else {
-                                    Toast.makeText(context, "No se encontró ningún usuario registrado con ese correo", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "No se encontró ningún usuario con ese correo o alias", Toast.LENGTH_LONG).show()
                                 }
                                 showShareDialog = false
                             }
                         } else {
-                            Toast.makeText(context, "Introduce un correo válido", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Introduce un correo o alias", Toast.LENGTH_SHORT).show()
                         }
                     }
                 ) {
@@ -315,6 +337,12 @@ fun TicketDetailScreen(
                     } else {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             items(sharedList) { email ->
+                                val matchFriend = friendsList.find { it.email.equals(email, ignoreCase = true) }
+                                val displayText = if (matchFriend != null && matchFriend.alias.isNotBlank()) {
+                                    "${matchFriend.alias} ($email)"
+                                } else {
+                                    email
+                                }
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = CardDefaults.cardColors(
@@ -322,7 +350,7 @@ fun TicketDetailScreen(
                                     )
                                 ) {
                                     Text(
-                                        text = email,
+                                        text = displayText,
                                         modifier = Modifier.padding(12.dp),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurface

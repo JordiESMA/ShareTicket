@@ -14,14 +14,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -31,6 +35,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,6 +43,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -57,6 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shareticket.app.data.repository.AuthRepository
 import com.shareticket.app.data.repository.FirestoreRepository
+import com.shareticket.app.data.repository.Friend
+import com.shareticket.app.data.repository.FriendRequest
 import com.shareticket.app.data.repository.Ticket
 import kotlinx.coroutines.launch
 
@@ -74,7 +83,7 @@ fun TicketsScreen(
 
     // Dialog state for sharing a ticket
     var sharingTicket by remember { mutableStateOf<Ticket?>(null) }
-    var shareEmailInput by remember { mutableStateOf("") }
+    var shareInput by remember { mutableStateOf("") }
 
     // Dialog state for viewing who the ticket is shared with
     var viewingSharedTicket by remember { mutableStateOf<Ticket?>(null) }
@@ -82,6 +91,17 @@ fun TicketsScreen(
     // Dialog state for creating a ticket
     var showCreateDialog by remember { mutableStateOf(false) }
     var newTicketTitleInput by remember { mutableStateOf("") }
+
+    // Friends State
+    var showFriendsDialog by remember { mutableStateOf(false) }
+    var friendsList by remember { mutableStateOf<List<Friend>>(emptyList()) }
+    var pendingRequests by remember { mutableStateOf<List<FriendRequest>>(emptyList()) }
+    var newFriendEmailInput by remember { mutableStateOf("") }
+    var friendsTabIndex by remember { mutableStateOf(0) }
+
+    // Dialog state for editing friend alias
+    var editingFriendAlias by remember { mutableStateOf<Friend?>(null) }
+    var friendAliasInput by remember { mutableStateOf("") }
 
     fun getTickets() {
         isLoading = true
@@ -91,8 +111,16 @@ fun TicketsScreen(
         }
     }
 
+    fun loadFriendsData() {
+        scope.launch {
+            friendsList = FirestoreRepository.obtenerAmigos()
+            pendingRequests = FirestoreRepository.obtenerSolicitudesPendientes()
+        }
+    }
+
     LaunchedEffect(Unit) {
         getTickets()
+        loadFriendsData()
     }
 
     Scaffold(
@@ -100,6 +128,12 @@ fun TicketsScreen(
             TopAppBar(
                 title = { Text("Mis Tickets", fontWeight = FontWeight.Bold) },
                 actions = {
+                    IconButton(onClick = {
+                        showFriendsDialog = true
+                        loadFriendsData()
+                    }) {
+                        Icon(Icons.Default.People, contentDescription = "Menú Amigos", tint = MaterialTheme.colorScheme.primary)
+                    }
                     IconButton(onClick = {
                         getTickets()
                         Toast.makeText(context, "Tickets actualizados", Toast.LENGTH_SHORT).show()
@@ -174,7 +208,8 @@ fun TicketsScreen(
                                 onClick = { onTicketClick(ticket.id) },
                                 onShareClick = {
                                     sharingTicket = ticket
-                                    shareEmailInput = ""
+                                    shareInput = ""
+                                    loadFriendsData()
                                 },
                                 onSharedWithClick = {
                                     viewingSharedTicket = ticket
@@ -187,23 +222,180 @@ fun TicketsScreen(
         }
     }
 
-    // DIALOG: Compartir Ticket (pedir correo)
-    sharingTicket?.let { ticket ->
+    // DIALOG: Menú de Amigos
+    if (showFriendsDialog) {
         AlertDialog(
-            onDismissRequest = { sharingTicket = null },
-            title = { Text("Compartir Ticket", fontWeight = FontWeight.Bold) },
+            onDismissRequest = { showFriendsDialog = false },
+            title = { Text("Menú de Amigos", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text(
-                        text = "Introduce el correo electrónico del usuario con quien deseas compartir '${ticket.title}':",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    TabRow(selectedTabIndex = friendsTabIndex) {
+                        Tab(
+                            selected = friendsTabIndex == 0,
+                            onClick = { friendsTabIndex = 0 },
+                            text = { Text("Amigos (${friendsList.size})") }
+                        )
+                        Tab(
+                            selected = friendsTabIndex == 1,
+                            onClick = { friendsTabIndex = 1 },
+                            text = { Text("Solicitudes (${pendingRequests.size})") }
+                        )
+                        Tab(
+                            selected = friendsTabIndex == 2,
+                            onClick = { friendsTabIndex = 2 },
+                            text = { Text("Añadir") }
+                        )
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
+
+                    when (friendsTabIndex) {
+                        0 -> {
+                            if (friendsList.isEmpty()) {
+                                Text("Aún no tienes amigos agregados.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            } else {
+                                LazyColumn(
+                                    modifier = Modifier.height(200.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(friendsList) { friend ->
+                                        Card(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(12.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = if (friend.alias.isNotBlank()) friend.alias else friend.email,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    if (friend.alias.isNotBlank()) {
+                                                        Text(text = friend.email, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                }
+                                                IconButton(onClick = {
+                                                    editingFriendAlias = friend
+                                                    friendAliasInput = friend.alias
+                                                }) {
+                                                    Icon(Icons.Default.Edit, contentDescription = "Editar Alias", tint = MaterialTheme.colorScheme.primary)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        1 -> {
+                            if (pendingRequests.isEmpty()) {
+                                Text("No tienes solicitudes pendientes.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            } else {
+                                LazyColumn(
+                                    modifier = Modifier.height(200.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(pendingRequests) { request ->
+                                        Card(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(12.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(
+                                                    text = request.fromEmail,
+                                                    fontWeight = FontWeight.Medium,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                Row {
+                                                    IconButton(onClick = {
+                                                        scope.launch {
+                                                            if (FirestoreRepository.responderSolicitudAmistad(request, true)) {
+                                                                Toast.makeText(context, "Solicitud aceptada", Toast.LENGTH_SHORT).show()
+                                                                loadFriendsData()
+                                                            }
+                                                        }
+                                                    }) {
+                                                        Icon(Icons.Default.Check, contentDescription = "Aceptar", tint = MaterialTheme.colorScheme.primary)
+                                                    }
+                                                    IconButton(onClick = {
+                                                        scope.launch {
+                                                            if (FirestoreRepository.responderSolicitudAmistad(request, false)) {
+                                                                Toast.makeText(context, "Solicitud rechazada", Toast.LENGTH_SHORT).show()
+                                                                loadFriendsData()
+                                                            }
+                                                        }
+                                                    }) {
+                                                        Icon(Icons.Default.Close, contentDescription = "Rechazar", tint = MaterialTheme.colorScheme.error)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        2 -> {
+                            Column {
+                                OutlinedTextField(
+                                    value = newFriendEmailInput,
+                                    onValueChange = { newFriendEmailInput = it },
+                                    label = { Text("Correo del amigo") },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Button(
+                                    onClick = {
+                                        val email = newFriendEmailInput.trim()
+                                        if (email.isNotBlank()) {
+                                            scope.launch {
+                                                val msg = FirestoreRepository.enviarSolicitudAmistad(email)
+                                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                                newFriendEmailInput = ""
+                                                loadFriendsData()
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Enviar Solicitud")
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showFriendsDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+
+    // DIALOG: Editar Alias de Amigo
+    editingFriendAlias?.let { friend ->
+        AlertDialog(
+            onDismissRequest = { editingFriendAlias = null },
+            title = { Text("Asignar Alias", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Asigna un apodo o alias para ${friend.email}:", fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
-                        value = shareEmailInput,
-                        onValueChange = { shareEmailInput = it },
-                        label = { Text("Correo electrónico") },
+                        value = friendAliasInput,
+                        onValueChange = { friendAliasInput = it },
+                        label = { Text("Alias (ej. Juan, Mamá)") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -212,20 +404,82 @@ fun TicketsScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val email = shareEmailInput.trim()
-                        if (email.isNotBlank()) {
+                        scope.launch {
+                            if (FirestoreRepository.guardarAliasAmigo(friend.email, friendAliasInput)) {
+                                Toast.makeText(context, "Alias guardado", Toast.LENGTH_SHORT).show()
+                                loadFriendsData()
+                            }
+                            editingFriendAlias = null
+                        }
+                    }
+                ) {
+                    Text("Guardar", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { editingFriendAlias = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    // DIALOG: Compartir Ticket (por Alias o Email)
+    sharingTicket?.let { ticket ->
+        AlertDialog(
+            onDismissRequest = { sharingTicket = null },
+            title = { Text("Compartir Ticket", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text(
+                        text = "Escribe el correo o alias del amigo para compartir '${ticket.title}':",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (friendsList.isNotEmpty()) {
+                        Text("Tus amigos (toca para seleccionar):", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            items(friendsList) { friend ->
+                                val label = if (friend.alias.isNotBlank()) friend.alias else friend.email
+                                FilterChip(
+                                    selected = shareInput == label || shareInput == friend.email,
+                                    onClick = { shareInput = label },
+                                    label = { Text(label) }
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    OutlinedTextField(
+                        value = shareInput,
+                        onValueChange = { shareInput = it },
+                        label = { Text("Correo o Alias del amigo") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val input = shareInput.trim()
+                        if (input.isNotBlank()) {
                             scope.launch {
-                                val success = FirestoreRepository.compartirTicket(ticket.id, email)
+                                val success = FirestoreRepository.compartirTicket(ticket.id, input)
                                 if (success) {
-                                    Toast.makeText(context, "Ticket compartido con éxito con $email", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "Ticket compartido con éxito", Toast.LENGTH_LONG).show()
                                     getTickets()
                                 } else {
-                                    Toast.makeText(context, "No se encontró ningún usuario registrado con ese correo", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "No se encontró ningún usuario con ese correo o alias", Toast.LENGTH_LONG).show()
                                 }
                                 sharingTicket = null
                             }
                         } else {
-                            Toast.makeText(context, "Introduce un correo válido", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Introduce un correo o alias", Toast.LENGTH_SHORT).show()
                         }
                     }
                 ) {
@@ -262,6 +516,12 @@ fun TicketsScreen(
                     } else {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             items(ticket.sharedWith) { userEmail ->
+                                val matchFriend = friendsList.find { it.email.equals(userEmail, ignoreCase = true) }
+                                val displayText = if (matchFriend != null && matchFriend.alias.isNotBlank()) {
+                                    "${matchFriend.alias} ($userEmail)"
+                                } else {
+                                    userEmail
+                                }
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = CardDefaults.cardColors(
@@ -269,7 +529,7 @@ fun TicketsScreen(
                                     )
                                 ) {
                                     Text(
-                                        text = userEmail,
+                                        text = displayText,
                                         modifier = Modifier.padding(12.dp),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurface

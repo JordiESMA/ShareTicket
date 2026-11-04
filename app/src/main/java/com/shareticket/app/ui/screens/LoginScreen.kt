@@ -40,10 +40,12 @@ import androidx.compose.ui.unit.sp
 import com.shareticket.app.data.repository.AuthRepository
 import kotlinx.coroutines.launch
 
+// Pantalla de Inicio de Sesión (Login) con autenticación de Google
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // Estado para controlar la visualización del indicador de carga mientras inicia sesión
     var isLoading by remember { mutableStateOf(false) }
 
     Surface(
@@ -57,6 +59,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Tarjeta con el icono del logo de la aplicación
             Card(
                 shape = CircleShape,
                 colors = CardDefaults.cardColors(
@@ -80,6 +83,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Título de la aplicación
             Text(
                 text = "ShareTicket",
                 style = MaterialTheme.typography.headlineLarge.copy(
@@ -91,6 +95,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Subtítulo explicativo
             Text(
                 text = "Tu lista de la compra compartida en tiempo real",
                 style = MaterialTheme.typography.bodyLarge,
@@ -100,6 +105,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 
             Spacer(modifier = Modifier.height(48.dp))
 
+            // Botón principal para Iniciar Sesión con Google
             Button(
                 onClick = {
                     isLoading = true
@@ -107,7 +113,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                         try {
                             if (AuthRepository.loginConGoogle(context)) {
                                 isLoading = false
-                                onLoginSuccess()
+                                onLoginSuccess() // Navegar a la pantalla principal si se autenticó con éxito
                             } else {
                                 isLoading = false
                                 Toast.makeText(context, "No se pudo iniciar sesión con Google", Toast.LENGTH_LONG).show()
@@ -129,6 +135,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 )
             ) {
                 if (isLoading) {
+                    // Muestra círculo giratorio mientras se procesa la autenticación
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
