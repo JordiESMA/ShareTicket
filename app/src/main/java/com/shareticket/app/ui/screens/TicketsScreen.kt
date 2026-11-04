@@ -63,7 +63,7 @@ fun TicketsScreen(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp, end = 8.dp),
+                    .padding(top = 40.dp, end = 8.dp),
             horizontalAlignment = Alignment.End
         ) {
             Button(

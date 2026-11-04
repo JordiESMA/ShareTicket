@@ -34,7 +34,8 @@ object FirestoreRepository {
                 mapOf(
                     "title" to title,
                     "createdBy" to user.uid,
-                    "sharedWith" to listOf(user.email)
+                    "sharedWith" to listOf(user.email),
+                    "items" to listOf<TicketItem>()
                 )
             ).await()
             true
@@ -77,4 +78,53 @@ object FirestoreRepository {
             false
         }
     }
+
+    // TICKETITEMS
+    suspend fun crearItem(ticketId: String, name: String): Boolean {
+        return try {
+            db.collection("tickets").document(ticketId)
+                .collection("items")
+                .add(
+                    mapOf(
+                        "name" to name,
+                        "isCompleted" to false,
+                        "addedBy" to AuthRepository.usuarioActual()?.uid
+                    )
+                ).await()
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("ITEMS", "crearItem", e)
+            false
+        }
+    }
+
+    suspend fun obtenerItems(ticketId: String): List<TicketItem> {
+        return try {
+            db.collection("tickets").document(ticketId)
+                .collection("items")
+                .get().await()
+                .documents.map { doc ->
+                    TicketItem(
+                        id = doc.id,
+                        name = doc.getString("name") ?: "",
+                        isCompleted = doc.getBoolean("isCompleted") ?: false
+                    )
+                }
+        } catch (e: Exception) {
+            android.util.Log.e("ITEMS", "obtenerItems", e)
+            emptyList()
+        }
+    }
+
+    suspend fun actualizarItem(ticketId: String, itemId: String, completed: Boolean): Boolean {
+        return try {
+            db.collection("tickets").document(ticketId)
+                .collection("items").document(itemId)
+                .update("isCompleted", completed).await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
 }

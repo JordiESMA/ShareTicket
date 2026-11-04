@@ -7,9 +7,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.shareticket.app.data.model.TicketItem
 import com.shareticket.app.data.repository.AuthRepository
 import com.shareticket.app.data.repository.FirestoreRepository
 import com.shareticket.app.ui.components.TicketItemRow
@@ -37,17 +41,21 @@ fun TicketDetailScreen(
 
     val scope = rememberCoroutineScope()
 
-    var tickets by remember { mutableStateOf<List<com.shareticket.app.data.repository.Ticket>>(emptyList()) }
+    var ticket by remember { mutableStateOf<com.shareticket.app.data.repository.Ticket?>(null) }
+
+    var ticketItems by remember { mutableStateOf<List<TicketItem>>(emptyList()) }
 
     fun getTickets() {
         scope.launch {
-            tickets = FirestoreRepository.obtenerTickets(AuthRepository.usuarioActual()?.email ?: "")
+            ticket = FirestoreRepository
+                .obtenerTickets(AuthRepository.usuarioActual()?.email ?: "")
+                .find { it.id == ticketId }
+            ticketItems = FirestoreRepository.obtenerItems(ticketId)
         }
     }
 
-    val ticket = tickets.find { it.id == ticketId }
 
-    var ticketItems = ticket?.items
+    var inputText by remember { mutableStateOf("") }
 
     getTickets()
 
@@ -82,13 +90,65 @@ fun TicketDetailScreen(
                 }
             }
 
-            Text(
+            /** Text(
                 text = "Created by: ${AuthRepository.usuarioActual()?.email ?: ""}",
                 fontSize = 12.sp,
                 modifier = Modifier
                     .padding(top = 4.dp)
-            )
+            ) **/
 
+        }
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if(ticketItems.isEmpty()){
+                Text(
+                    text = "No hi ha items",
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }else {
+                ticketItems.let {
+                    LazyColumn {
+                        items(ticketItems, key = { it.id }) { item ->
+                            TicketItemRow(
+                                item = item,
+                                onCheckedChange = { checked ->
+                                    ticketItems = ticketItems.map {
+                                        if (it.id == item.id) it.copy(isCompleted = checked) else it
+                                    }
+                                    scope.launch {
+                                        FirestoreRepository.actualizarItem(ticketId, item.id, checked)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(value = inputText, onValueChange = {
+                    inputText = it
+                })
+                Button(onClick = {
+                    if (inputText.isBlank()) return@Button
+                    scope.launch {
+                        if (FirestoreRepository.crearItem(ticketId, inputText.trim())) {
+                            inputText = ""
+                            getTickets()
+                        }
+                    }
+                }) {
+                    Text(text = "+")
+                }
+            }
         }
     }
 }
