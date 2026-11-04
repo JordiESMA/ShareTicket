@@ -127,4 +127,15 @@ object FirestoreRepository {
         }
     }
 
+    suspend fun eliminarItem(ticketId: String, itemId: String): Boolean {
+        return try {
+            db.collection("tickets").document(ticketId)
+                .collection("items").document(itemId)
+                .delete().await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
 }

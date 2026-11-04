@@ -29,7 +29,7 @@ import com.shareticket.app.data.model.TicketItem
 fun TicketItemRow(
     item: TicketItem,
     onCheckedChange: (Boolean) -> Unit,
-    onDelete: (String) -> Unit = {},
+    onDelete: (String) -> Unit
 ) {
     Row(
         modifier = Modifier

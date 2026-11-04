@@ -121,7 +121,14 @@ fun TicketDetailScreen(
                                     scope.launch {
                                         FirestoreRepository.actualizarItem(ticketId, item.id, checked)
                                     }
+                                },
+                                onDelete = {
+                                    ticketItems = ticketItems.filter { it.id != item.id }
+                                    scope.launch {
+                                        FirestoreRepository.eliminarItem(ticketId, item.id)
+                                    }
                                 }
+
                             )
                         }
                     }
