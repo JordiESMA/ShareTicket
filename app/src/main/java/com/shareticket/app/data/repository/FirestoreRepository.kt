@@ -4,13 +4,15 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
+import com.shareticket.app.data.model.TicketItem
 import kotlinx.coroutines.tasks.await
 
 data class Ticket(
     val id: String = "",
     val title: String = "",
     val createdBy: String = "",
-    val sharedWith: List<String> = emptyList()
+    val sharedWith: List<String> = emptyList(),
+    val items: List<TicketItem> = emptyList()
 )
 
 object FirestoreRepository {
@@ -24,6 +26,14 @@ object FirestoreRepository {
         ).await()
     }
 
+    suspend fun obtenerEmailUsuario(uid: String): String? {
+        return try {
+            db.collection("users").document(uid).get().await().getString("email")
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     // TICKETS
     suspend fun crearTicket(title: String): Boolean {
         val user = AuthRepository.usuarioActual() ?: return false
@@ -32,7 +42,8 @@ object FirestoreRepository {
                 mapOf(
                     "title" to title,
                     "createdBy" to user.uid,
-                    "sharedWith" to listOf(user.email)
+                    "sharedWith" to listOf(user.email),
+                    "items" to listOf<TicketItem>()
                 )
             ).await()
             true
@@ -75,4 +86,64 @@ object FirestoreRepository {
             false
         }
     }
+
+    // TICKETITEMS
+    suspend fun crearItem(ticketId: String, name: String): Boolean {
+        return try {
+            db.collection("tickets").document(ticketId)
+                .collection("items")
+                .add(
+                    mapOf(
+                        "name" to name,
+                        "isCompleted" to false,
+                        "addedBy" to AuthRepository.usuarioActual()?.uid
+                    )
+                ).await()
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("ITEMS", "crearItem", e)
+            false
+        }
+    }
+
+    suspend fun obtenerItems(ticketId: String): List<TicketItem> {
+        return try {
+            db.collection("tickets").document(ticketId)
+                .collection("items")
+                .get().await()
+                .documents.map { doc ->
+                    TicketItem(
+                        id = doc.id,
+                        name = doc.getString("name") ?: "",
+                        isCompleted = doc.getBoolean("isCompleted") ?: false
+                    )
+                }
+        } catch (e: Exception) {
+            android.util.Log.e("ITEMS", "obtenerItems", e)
+            emptyList()
+        }
+    }
+
+    suspend fun actualizarItem(ticketId: String, itemId: String, completed: Boolean): Boolean {
+        return try {
+            db.collection("tickets").document(ticketId)
+                .collection("items").document(itemId)
+                .update("isCompleted", completed).await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun eliminarItem(ticketId: String, itemId: String): Boolean {
+        return try {
+            db.collection("tickets").document(ticketId)
+                .collection("items").document(itemId)
+                .delete().await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
 }
