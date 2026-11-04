@@ -26,6 +26,14 @@ object FirestoreRepository {
         ).await()
     }
 
+    suspend fun obtenerEmailUsuario(uid: String): String? {
+        return try {
+            db.collection("users").document(uid).get().await().getString("email")
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     // TICKETS
     suspend fun crearTicket(title: String): Boolean {
         val user = AuthRepository.usuarioActual() ?: return false

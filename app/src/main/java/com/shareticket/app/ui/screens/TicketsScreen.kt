@@ -11,13 +11,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -25,13 +27,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shareticket.app.data.repository.AuthRepository
 import com.shareticket.app.data.repository.FirestoreRepository
-import com.shareticket.app.data.model.Ticket
+import com.shareticket.app.data.repository.Ticket
 import kotlinx.coroutines.launch
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -51,7 +55,9 @@ fun TicketsScreen(
         }
     }
 
-    var inputText by remember { mutableStateOf("") }
+    var inputTextAdd by remember { mutableStateOf("") }
+
+    var inputTextEmail by remember { mutableStateOf("") }
 
     getTickets()
 
@@ -89,7 +95,25 @@ fun TicketsScreen(
                             items(it.size) { index ->
                                 TicketRow(
                                     ticket = it[index],
-                                    onTicketClick = { onTicketClick( it[index].id ) }
+                                    onTicketClick = { onTicketClick( it[index].id ) },
+                                    onShareTicket = {
+                                        scope.launch {
+                                            if (FirestoreRepository.compartirTicket(it[index].id, inputTextEmail.trim())) {
+                                                inputTextEmail = ""
+                                                getTickets()
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                            item {
+                                OutlinedTextField(
+                                    value = inputTextEmail,
+                                    onValueChange = { inputTextEmail = it },
+                                    label = { Text("Correo electrónico") },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(10.dp),
                                 )
                             }
                         }
@@ -103,14 +127,16 @@ fun TicketsScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(value = inputText, onValueChange = {
-                    inputText = it
-                })
+                OutlinedTextField(
+                    value = inputTextAdd,
+                    onValueChange = { inputTextAdd = it },
+                    label = { Text("Nombre del Ticket") },
+                )
                 Button(onClick = {
-                    if (inputText.isBlank()) return@Button
+                    if (inputTextAdd.isBlank()) return@Button
                     scope.launch {
-                        if (FirestoreRepository.crearTicket(inputText.trim())) {
-                            inputText = ""
+                        if (FirestoreRepository.crearTicket(inputTextAdd.trim())) {
+                            inputTextAdd = ""
                             getTickets()
                         }
                     }
@@ -123,7 +149,17 @@ fun TicketsScreen(
 }
 
 @Composable
-fun TicketRow(ticket: com.shareticket.app.data.repository.Ticket, onTicketClick: () -> Unit) {
+fun TicketRow(ticket: Ticket, onTicketClick: () -> Unit, onShareTicket: () -> Unit) {
+
+    var creatorEmail by remember(ticket.createdBy) { mutableStateOf("") }
+
+    LaunchedEffect(ticket.createdBy) {
+        if (ticket.createdBy.isNotBlank()) {
+            creatorEmail = FirestoreRepository.obtenerEmailUsuario(ticket.createdBy)
+                ?: ticket.createdBy
+        }
+    }
+
     Button(
         modifier = Modifier
             .fillMaxWidth()
@@ -141,9 +177,16 @@ fun TicketRow(ticket: com.shareticket.app.data.repository.Ticket, onTicketClick:
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Created by: ${AuthRepository.usuarioActual()?.email ?: ""}",
+                text = "Created by: ${creatorEmail}",
                 fontSize = 16.sp,
             )
+            IconButton(onClick = { onShareTicket() }) {
+                Icon(
+                    painter = painterResource(id = android.R.drawable.ic_menu_share),
+                    contentDescription = "Delete Ticket",
+                    tint = Color.White
+                )
+            }
         }
     }
 }
