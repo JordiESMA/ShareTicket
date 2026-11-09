@@ -265,7 +265,7 @@ object FirestoreRepository {
     // ----------------------------------------------------
 
     // Crea un nuevo artículo en la subcolección "items" dentro del ticket
-    suspend fun crearItem(ticketId: String, name: String): Boolean {
+    suspend fun crearItem(ticketId: String, name: String, category: String = "General"): Boolean {
         return try {
             db.collection("tickets").document(ticketId)
                 .collection("items")
@@ -273,7 +273,8 @@ object FirestoreRepository {
                     mapOf(
                         "name" to name,
                         "isCompleted" to false,
-                        "addedBy" to AuthRepository.usuarioActual()?.uid
+                        "addedBy" to AuthRepository.usuarioActual()?.uid,
+                        "category" to category
                     )
                 ).await()
             true
@@ -293,7 +294,8 @@ object FirestoreRepository {
                     TicketItem(
                         id = doc.id,
                         name = doc.getString("name") ?: "",
-                        isCompleted = doc.getBoolean("isCompleted") ?: false
+                        isCompleted = doc.getBoolean("isCompleted") ?: false,
+                        category = doc.getString("category") ?: "General"
                     )
                 }
         } catch (e: Exception) {

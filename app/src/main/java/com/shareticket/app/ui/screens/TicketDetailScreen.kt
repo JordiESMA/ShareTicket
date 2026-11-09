@@ -1,6 +1,7 @@
 package com.shareticket.app.ui.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,18 +24,20 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -60,6 +63,18 @@ import com.shareticket.app.data.repository.Ticket
 import com.shareticket.app.ui.components.TicketItemRow
 import kotlinx.coroutines.launch
 
+// Categorías generales predefinidas
+private val CATEGORIAS_GENERALES = listOf(
+    "Alimentación",
+    "Carnes y Pescados",
+    "Lácteos y Huevos",
+    "Bebidas",
+    "Hogar y Limpieza",
+    "Electrodomésticos y Tecnología",
+    "Escolar y Oficina",
+    "Otros"
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TicketDetailScreen(
@@ -73,7 +88,14 @@ fun TicketDetailScreen(
     var ticketItems by remember { mutableStateOf<List<TicketItem>>(emptyList()) }
     var friendsList by remember { mutableStateOf<List<Friend>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-    var inputText by remember { mutableStateOf("") }
+
+    // Selector de vista en pantalla (0 = Todos los elementos, 1 = Por categorías)
+    var selectedViewTabIndex by remember { mutableStateOf(0) }
+
+    // Estado del Pop-up (AlertDialog) para añadir nuevo artículo
+    var showAddItemDialog by remember { mutableStateOf(false) }
+    var newItemNameInput by remember { mutableStateOf("") }
+    var newItemCategoryInput by remember { mutableStateOf("Alimentación") }
 
     // Dialog states for sharing and shared-with list
     var showShareDialog by remember { mutableStateOf(false) }
@@ -137,6 +159,20 @@ fun TicketDetailScreen(
                     actionIconContentColor = MaterialTheme.colorScheme.primary
                 )
             )
+        },
+        floatingActionButton = {
+            // Botón flotante para abrir el Pop-up de añadir artículo
+            FloatingActionButton(
+                onClick = {
+                    newItemNameInput = ""
+                    newItemCategoryInput = "Alimentación"
+                    showAddItemDialog = true
+                },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Añadir Artículo")
+            }
         }
     ) { paddingValues ->
         Surface(
@@ -145,16 +181,43 @@ fun TicketDetailScreen(
                 .padding(paddingValues),
             color = MaterialTheme.colorScheme.background
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                // Main Content
+            Column(modifier = Modifier.fillMaxSize()) {
+
+                // SELECTOR DE VISTA CON LETRA EN PANTALLA
+                PrimaryTabRow(
+                    selectedTabIndex = selectedViewTabIndex,
+                    containerColor = MaterialTheme.colorScheme.surface
+                ) {
+                    Tab(
+                        selected = selectedViewTabIndex == 0,
+                        onClick = { selectedViewTabIndex = 0 },
+                        text = {
+                            Text(
+                                text = "Elementos (${ticketItems.size})",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        }
+                    )
+                    Tab(
+                        selected = selectedViewTabIndex == 1,
+                        onClick = { selectedViewTabIndex = 1 },
+                        text = {
+                            Text(
+                                text = "Por Categorías",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        }
+                    )
+                }
+
+                // CONTENIDO SEGÚN LA VISTA SELECCIONADA
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
+                        .padding(16.dp)
                 ) {
                     if (isLoading && ticketItems.isEmpty()) {
                         CircularProgressIndicator(
@@ -179,7 +242,57 @@ fun TicketDetailScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    } else if (selectedViewTabIndex == 1) {
+                        // VISTA: POR CATEGORÍAS
+                        val groupedItems = ticketItems.groupBy {
+                            if (it.category.isBlank()) "Otros" else it.category
+                        }
+
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            groupedItems.forEach { (categoryName, itemsInCategory) ->
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                                        ),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                                    ) {
+                                        Text(
+                                            text = "📁 $categoryName (${itemsInCategory.size})",
+                                            modifier = Modifier.padding(12.dp),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                                items(itemsInCategory, key = { it.id }) { item ->
+                                    TicketItemRow(
+                                        item = item,
+                                        onCheckedChange = { checked ->
+                                            ticketItems = ticketItems.map {
+                                                if (it.id == item.id) it.copy(isCompleted = checked) else it
+                                            }
+                                            scope.launch {
+                                                FirestoreRepository.actualizarItem(ticketId, item.id, checked)
+                                            }
+                                        },
+                                        onDelete = { itemId ->
+                                            ticketItems = ticketItems.filter { it.id != itemId }
+                                            scope.launch {
+                                                FirestoreRepository.eliminarItem(ticketId, itemId)
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     } else {
+                        // VISTA: TODOS LOS ELEMENTOS
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -206,42 +319,75 @@ fun TicketDetailScreen(
                         }
                     }
                 }
+            }
+        }
+    }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Bottom Input Row for adding items
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+    // POP-UP DIALOG: Añadir Artículo con Nombre y Categoría
+    if (showAddItemDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddItemDialog = false },
+            title = { Text("Añadir Artículo", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
                     OutlinedTextField(
-                        value = inputText,
-                        onValueChange = { inputText = it },
-                        label = { Text("Añadir artículo...") },
+                        value = newItemNameInput,
+                        onValueChange = { newItemNameInput = it },
+                        label = { Text("Nombre del artículo (ej. Leche)") },
                         singleLine = true,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    Button(
-                        onClick = {
-                            val name = inputText.trim()
-                            if (name.isBlank()) return@Button
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Selecciona una categoría:",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(CATEGORIAS_GENERALES) { cat ->
+                            FilterChip(
+                                selected = newItemCategoryInput == cat,
+                                onClick = { newItemCategoryInput = cat },
+                                label = { Text(cat, fontSize = 12.sp) }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val name = newItemNameInput.trim()
+                        if (name.isNotBlank()) {
                             scope.launch {
-                                if (FirestoreRepository.crearItem(ticketId, name)) {
-                                    inputText = ""
+                                val success = FirestoreRepository.crearItem(ticketId, name, newItemCategoryInput)
+                                if (success) {
+                                    Toast.makeText(context, "Artículo añadido", Toast.LENGTH_SHORT).show()
+                                    showAddItemDialog = false
                                     getTicketsAndItems()
                                 } else {
                                     Toast.makeText(context, "Error al añadir artículo", Toast.LENGTH_SHORT).show()
                                 }
                             }
-                        },
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Añadir")
+                        } else {
+                            Toast.makeText(context, "Escribe el nombre del artículo", Toast.LENGTH_SHORT).show()
+                        }
                     }
+                ) {
+                    Text("Añadir", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddItemDialog = false }) {
+                    Text("Cancelar")
                 }
             }
-        }
+        )
     }
 
     // DIALOG: Compartir Ticket
