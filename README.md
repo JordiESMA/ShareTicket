@@ -89,6 +89,4 @@ Con este proyecto he practicado Kotlin y Compose para crear varias pantallas, na
 
 ## Autoría
 
-- Autor: [PENDIENTE]
-- Repositorio: [PENDIENTE]
-
+- Autor: Jordi y Iván   
